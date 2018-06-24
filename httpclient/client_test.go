@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gojektech/heimdall"
-	"github.com/gojektech/heimdall/plugins"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -416,7 +415,7 @@ func TestHTTPClientGetReturnsErrorOn5xxFailure(t *testing.T) {
 
 func TestPluginMethodsCalled(t *testing.T) {
 	client := NewClient(WithHTTPTimeout(10 * time.Millisecond))
-	mockPlugin := &plugins.MockPlugin{}
+	mockPlugin := &heimdall.MockPlugin{}
 	client.AddPlugin(mockPlugin)
 
 	dummyHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -447,7 +446,7 @@ func TestPluginMethodsCalled(t *testing.T) {
 
 func TestPluginErrorMethodCalled(t *testing.T) {
 	client := NewClient(WithHTTPTimeout(10 * time.Millisecond))
-	mockPlugin := &plugins.MockPlugin{}
+	mockPlugin := &heimdall.MockPlugin{}
 	client.AddPlugin(mockPlugin)
 
 	mockPlugin.On("OnRequestStart", mock.Anything)
