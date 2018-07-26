@@ -141,6 +141,7 @@ func (c *Client) Do(request *http.Request) (*http.Response, error) {
 	var response *http.Response
 
 	for i := 0; i <= c.retryCount; i++ {
+		c.reportRequestStart(request)
 		var err error
 		response, err = c.client.Do(request)
 		if bodyReader != nil {
