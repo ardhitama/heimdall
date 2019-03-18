@@ -5,10 +5,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
+	"sync"
 	"testing"
 	"time"
-
-	"strings"
 
 	"github.com/gojektech/heimdall"
 	"github.com/stretchr/testify/assert"
@@ -529,6 +530,41 @@ func respBody(t *testing.T, response *http.Response) string {
 	require.NoError(t, err, "should not have failed to read response body")
 
 	return string(respBody)
+}
+
+func TestHystrixHTTPClientGetReturnedURLTimeout(t *testing.T) {
+	client := NewClient(
+		WithHTTPTimeout(5*time.Millisecond),
+		WithCommandName("TestHystrixHTTPClientGetReturnedURLTimeout"),
+		WithHystrixTimeout(200*time.Millisecond),
+		WithMaxConcurrentRequests(10000000),
+		WithErrorPercentThreshold(100),
+		WithSleepWindow(0),
+		WithRequestVolumeThreshold(10000000),
+	)
+
+	dummyHandler := func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(dummyHandler))
+	defer server.Close()
+
+	headers := http.Header{}
+	headers.Set("Content-Type", "application/json")
+	headers.Set("Accept-Language", "en")
+
+	wg := sync.WaitGroup{}
+
+	for n := 0; n < 400; n++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err := client.Get(server.URL, headers)
+			require.IsType(t, &url.Error{}, err, "should got Client.Timeout exceeded while awaiting headers error")
+		}()
+	}
+	wg.Wait()
 }
 
 func TestDurationToInt(t *testing.T) {
